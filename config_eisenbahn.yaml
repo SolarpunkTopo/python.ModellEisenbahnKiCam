@@ -1,0 +1,24 @@
+rtsp_url: rtsp://admin:otto4546@10.151.20.12/
+frame_width: 1280
+frame_height: 720
+process_interval: 0.5
+conf_thresh: 0.1
+yolo_imgsz: 1024
+model:
+  path: models/eisenbahn/yolov8s_eisenbahn.pt
+  lok_classes:
+  - dampflok
+  - diesellok
+  wagon_classes:
+  - wagon
+  - wagen
+coupling:
+  distance_px: 150.0
+mqtt:
+  enabled: false
+  host: localhost
+  port: 1883
+  topic: eisenbahn/koppelabstand
+  payload_on: KOPPEL_ABSTAND
+  username: null
+  password: null

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <title>Eisenbahn – Koppelabstand-Monitor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body class="monitor">
+<header class="app-header">
+    <div class="app-title">Eisenbahn – Koppelabstand-Monitor</div>
+    <div class="header-status">
+        <span id="headerStatusLabel" class="header-status-label">Status</span>
+        <span id="headerStatusDot" class="header-status-dot neutral"></span>
+    </div>
+</header>
+
+<main class="monitor-main">
+    <!-- Linke Seite: Live-Kamera -->
+    <section class="panel monitor-video">
+        <h2>Live-Kamera – Eisenbahnplatte</h2>
+        <div class="img-wrapper">
+            <!-- schneller Raw-Stream von der Eisenbahn-Kamera -->
+            <img src="{{ url_for('preview_raw') }}" alt="Eisenbahn-Kamera">
+            <!-- Overlay-Label direkt auf dem Bild (wird per JS gesetzt) -->
+            <div class="video-overlay-label neutral">Initialisiere &hellip;</div>
+            <!-- Layer für Bounding Boxes (Lok/Waggon + Koppelabstand) -->
+            <div id="bboxLayer" class="bbox-layer"></div>
+        </div>
+
+        <!-- Großer Status direkt unter dem Video -->
+        <div id="monitorCountLabel" class="monitor-count-label">
+            Noch kein Koppelabstand erkannt
+        </div>
+
+        <!-- Optional: kleine Zusatzinfos zur Distanz -->
+        <div class="monitor-extra-info">
+            <div>
+                <strong>Minimaler Abstand:</strong>
+                <span id="minDistanceInfo">–</span>
+            </div>
+            <div>
+                <strong>Grenzwert (Koppelabstand):</strong>
+                <span id="thresholdInfo">–</span>
+            </div>
+            <div>
+                <strong>MQTT:</strong>
+                <span id="mqttInfo">–</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Rechte Seite: Status & erkannte Objekte -->
+    <section class="panel monitor-status">
+        <h2>Status & erkannte Objekte</h2>
+
+        <!-- große Statusbox -->
+        <div id="alarm" class="alarm-box neutral">
+            Keine Daten
+        </div>
+
+        <!-- Detail-Text (Anzahl Loks/Waggons, Abstände etc.) -->
+        <p id="details" class="details"></p>
+
+        <!-- Grid mit vergrößerten Ausschnitten der erkannten Objekte (Lok/Waggon) -->
+        <div id="detThumbGrid" class="det-thumb-grid"></div>
+    </section>
+</main>
+</body>
+</html>

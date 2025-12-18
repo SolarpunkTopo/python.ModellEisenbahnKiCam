@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8">
+    <title>Eisenbahn – Debug & Koppelabstand</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+<header class="app-header">
+    <div>
+        <div class="app-title">Eisenbahn – Debug & Koppelabstand</div>
+        <div class="app-subtitle">
+            Live-Overlays, Abstände & (optional) MQTT-Signale
+        </div>
+    </div>
+    <div class="header-status">
+        <span id="headerStatusLabel" class="header-status-label">Status</span>
+        <span id="headerStatusDot" class="header-status-dot neutral"></span>
+    </div>
+</header>
+
+<main class="grid">
+    <!-- Linke Seite: Live-Vorschau -->
+    <section class="panel">
+        <h2>Live-Kamera mit Overlays</h2>
+        <div class="img-wrapper">
+            <!-- MJPEG-Stream aus /preview (mit Lok-/Waggon-BBoxen & Distanz-Linie) -->
+            <img id="preview" src="{{ url_for('preview') }}" alt="Eisenbahn-Vorschau">
+            <!-- Transparentes Status-Overlay direkt im Bild -->
+            <div class="video-overlay-label neutral">Initialisiere &hellip;</div>
+        </div>
+        <p class="hint">
+            <b>Blaue Rahmen</b> markieren erkannte Loks, <b>grüne Rahmen</b> markieren Waggons.
+            Eine gelbe Linie verbindet das aktuell nächste Lok–Waggon-Paar; der Abstand wird in Pixeln angezeigt.
+        </p>
+        <p class="hint">
+            Für die reine Produktionsanzeige gibt es den
+            <a href="{{ url_for('monitor') }}">Monitor-Modus</a>.
+        </p>
+    </section>
+
+    <!-- Rechte Seite: Status + Einstellungen -->
+    <section class="panel">
+        <h2>Status & Meldungen</h2>
+
+        <div id="alarm" class="alarm-box neutral">Initialisiere &hellip;</div>
+        <p id="details" class="details"></p>
+
+        <hr style="border: none; border-top: 1px solid #1f2937; margin: 0.9rem 0;">
+
+        <h3 style="font-size:1rem; margin-bottom:0.4rem;">Live-Infos</h3>
+        <div class="details">
+            <div><strong>Minimaler Abstand:</strong> <span id="minDistanceInfo">–</span></div>
+            <div><strong>Grenzwert (Koppelabstand):</strong> <span id="thresholdInfo">–</span></div>
+            <div><strong>Loks erkannt:</strong> <span id="lokCountInfo">–</span></div>
+            <div><strong>Waggons erkannt:</strong> <span id="wagonCountInfo">–</span></div>
+            <div><strong>MQTT zuletzt:</strong> <span id="mqttInfo">–</span></div>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #1f2937; margin: 0.9rem 0;">
+
+        <h3 style="font-size:1rem; margin-bottom:0.4rem;">Einstellungen (Live)</h3>
+        <p class="details">
+            Diese Parameter beeinflussen alle Endpunkte (Erkennung & Streams) der Eisenbahn-App.
+        </p>
+
+        <!-- Allgemeine YOLO-/Stream-/Abstands-Parameter -->
+        <div class="form-grid">
+            <div class="full-row">
+                <label for="configRtspUrl">Kamera-URL (RTSP)</label>
+                <input id="configRtspUrl" type="text" placeholder="rtsp://..." />
+            </div>
+
+            <div>
+                <label for="configProcessInterval">PROCESS_INTERVAL (s)</label>
+                <input id="configProcessInterval" type="number" min="0.05" max="10" step="0.05" value="0.5" />
+            </div>
+            <div>
+                <label for="configConfThresh">CONF_THRESH</label>
+                <input id="configConfThresh" type="number" min="0.01" max="1.0" step="0.01" value="0.35" />
+            </div>
+            <div>
+                <label for="configImgSz">YOLO_IMGSZ</label>
+                <input id="configImgSz" type="number" min="128" max="2048" step="32" value="1024" />
+            </div>
+            <div>
+                <label for="configFrameWidth">FRAME_WIDTH</label>
+                <input id="configFrameWidth" type="number" min="320" max="3840" step="16" value="1280" />
+            </div>
+            <div>
+                <label for="configFrameHeight">FRAME_HEIGHT</label>
+                <input id="configFrameHeight" type="number" min="240" max="2160" step="16" value="720" />
+            </div>
+
+            <div class="full-row">
+                <label for="configCouplingDistancePx">
+                    Grenzwert Koppelabstand (Pixel)
+                </label>
+                <input id="configCouplingDistancePx" type="number" min="1" max="5000" step="1" value="80" />
+            </div>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #1f2937; margin: 0.9rem 0;">
+
+        <!-- MQTT-Einstellungen -->
+        <h3 style="font-size:1rem; margin-bottom:0.4rem;">MQTT-Signal bei Koppelabstand</h3>
+        <p class="details">
+            Wenn <b>Koppelabstand erkannt</b> wird, kann ein MQTT-Befehl gesendet werden
+            (z.&nbsp;B. zum Ansteuern eines Relais, einer Anzeige oder eines Sounds).
+        </p>
+
+        <div class="form-grid">
+            <div class="full-row">
+                <label>
+                    <input id="configMqttEnabled" type="checkbox">
+                    MQTT aktiviert
+                </label>
+            </div>
+
+            <div>
+                <label for="configMqttHost">MQTT Host</label>
+                <input id="configMqttHost" type="text" placeholder="localhost" />
+            </div>
+            <div>
+                <label for="configMqttPort">Port</label>
+                <input id="configMqttPort" type="number" min="1" max="65535" step="1" value="1883" />
+            </div>
+
+            <div class="full-row">
+                <label for="configMqttTopic">Topic</label>
+                <input id="configMqttTopic" type="text" placeholder="eisenbahn/koppelabstand" />
+            </div>
+
+            <div class="full-row">
+                <label for="configMqttPayloadOn">Payload bei Koppelabstand</label>
+                <input id="configMqttPayloadOn" type="text" placeholder="KOPPEL_ABSTAND" />
+            </div>
+
+            <div>
+                <label for="configMqttUser">MQTT User</label>
+                <input id="configMqttUser" type="text" />
+            </div>
+            <div>
+                <label for="configMqttPass">MQTT Passwort</label>
+                <input id="configMqttPass" type="password" />
+            </div>
+        </div>
+
+        <div class="btn-row">
+            <button id="btnSaveConfig" class="btn-outline" type="button">
+                Einstellungen übernehmen
+            </button>
+        </div>
+
+        <p id="configStatus" class="snap-status"></p>
+    </section>
+</main>
+</body>
+</html>
